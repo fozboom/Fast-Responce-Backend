@@ -12,3 +12,4 @@ bcrypt                     # For hashing passwords
 passlib[bcrypt]                     # For hashing passwords
 python-multipart
 pyjwt
+colorlog

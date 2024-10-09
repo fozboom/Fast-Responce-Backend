@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, timedelta
 
 from fastapi import HTTPException, status, Depends
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 import jwt
 from jwt import InvalidTokenError
 
@@ -11,18 +11,26 @@ from app.config import settings
 from app.users.service import UserService
 from app.users.schemas import SUserAuth
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/token/")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/token/",
+                                     scopes={"admin": "Admin access",
+                                             "doctor": "Doctor access",
+                                             "driver": "Driver access",
+                                             "operator": "Operator access"})
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
+
 
 def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(data: dict, user_role: str, expires_delta: timedelta | None = None):
     to_encode = data.copy()
+    scopes = [user_role]
+    to_encode.update({"scopes": scopes})
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
@@ -31,7 +39,8 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+
+async def validate_token_and_return_scopes(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -40,6 +49,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         username: str = payload.get("sub")
+        scopes = payload.get("scopes", [])
         if username is None:
             raise credentials_exception
     except InvalidTokenError:
@@ -47,10 +57,19 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     user = await UserService.find_one_or_none(username=username)
     if user is None:
         raise credentials_exception
-    user_dict = user.to_dict()
-    return SUserAuth(**user_dict)
+    return scopes
 
-async def get_current_active_user(current_user: SUserAuth = Depends(get_current_user)):
-    if not current_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
+
+async def role_required(
+        security_scopes: SecurityScopes,
+        token_data: tuple = Depends(validate_token_and_return_scopes)
+):
+    scopes = token_data
+    token_scopes = set(scopes)
+
+    if not token_scopes.intersection(security_scopes.scopes):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions",
+        )
+

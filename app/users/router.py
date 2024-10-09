@@ -2,56 +2,69 @@ from datetime import timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, status
-from fastapi.params import Depends
+from fastapi.params import Depends, Security
 from fastapi.security import OAuth2PasswordRequestForm
+
 from app.config import settings
-from app.users.auth import create_access_token, get_current_active_user, get_password_hash
-from app.users.service import UserService
-from app.users.models import User
+from app.roles.service import RoleService
+from app.users.auth import create_access_token, get_password_hash, role_required, verify_password
 from app.users.schemas import SToken, SUserAuth, SUserCreate
+from app.users.service import UserService
 
 router = APIRouter(prefix='/users', tags=['Work with users'])
-auth = APIRouter()
+
 
 @router.post('/token', response_model=SToken, description="Get access token")
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> SToken:
-    user = await UserService.find_one_or_none(username=form_data.username)
-    if not user:
+    user = await UserService.find_full_user_data_or_none(username=form_data.username)
+    if not user or not verify_password(form_data.password, user['hashed_password']):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    role = user['role']
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": user['username']}, user_role=role, expires_delta=access_token_expires
     )
     return SToken(access_token=access_token, token_type="bearer")
 
 
-@router.post("/register", response_model=SUserAuth)
-async def register_user(user_data: SUserCreate = Depends()) -> SUserAuth:
+@router.post("/register", response_model=SUserAuth, description="Register new user")
+async def register_user(
+        security_scopes=Security(role_required, scopes=['admin']),
+        user_data: SUserCreate = Depends(),
+) -> SUserAuth:
     user = await UserService.find_one_or_none(username=user_data.username)
     if user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered",
+            detail="Username already registered"
+        )
+
+    role = await RoleService.find_one_or_none(name=user_data.role)
+    if not role:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid role. Available roles: admin, doctor, driver, operator"
         )
 
     hashed_password = get_password_hash(user_data.password)
-    new_user = user_data.model_dump()
-    new_user.pop("password")
-    new_user["hashed_password"] = hashed_password
-    await UserService.add(**new_user)
 
-    return SUserAuth(username=new_user['username'], is_active=True)
+    new_user_data = {
+        "username": user_data.username,
+        "hashed_password": hashed_password,
+        "role_id": role.id,
+        "is_active": True
+    }
+
+    new_user = await UserService.add(**new_user_data)
+
+    return SUserAuth(username=new_user.username, is_active=new_user.is_active, role=role.name)
 
 
-@router.get("/me", response_model=SUserAuth)
-async def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)]) -> SUserAuth:
-    return current_user
-
-
-@router.get("/users/me/items/")
-async def read_own_items(current_user: Annotated[SUserAuth, Depends(get_current_active_user)]):
-    return [{"item_id": "Foo", "owner": current_user.username}]
+@router.get('/all', response_model=list[SUserAuth], description="Get all users")
+async def get_all_users(security_scopes=Security(role_required, scopes=['admin'])) -> list[SUserAuth]:
+    users = await UserService.find_all()
+    return [SUserAuth(username=user['username'], is_active=user['is_active'], role=user['role']) for user in users]

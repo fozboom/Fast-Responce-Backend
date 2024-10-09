@@ -8,8 +8,9 @@ class BaseService:
     @classmethod
     async def find_all(cls, **filter_by):
         async with Session() as session:
-            query = select(cls.model)
-            return await session.stream_scalars(query)
+            query = select(cls.model).filter_by(**filter_by)
+            result = await session.execute(query)
+            return result.scalars().all()
 
     @classmethod
     async def find_one_or_none_by_id(cls, data_id: int):
@@ -37,3 +38,5 @@ class BaseService:
             query = select(cls.model).filter_by(**filter_by)
             result = await session.execute(query)
             return result.scalar_one_or_none()
+
+
