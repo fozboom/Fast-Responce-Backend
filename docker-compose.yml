@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_USER: operator
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: fastresponse
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - fastresponse
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-U", "postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+
+  backend:
+    build: .
+    depends_on:
+      db:
+        condition:
+          service_healthy
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - .:/app
+    networks:
+      - fastresponse
+    command: [ "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000" ]
+
+volumes:
+  postgres_data:
+
+networks:
+  fastresponse:

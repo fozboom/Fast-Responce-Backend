@@ -1,0 +1,14 @@
+fastapi                  # FastAPI framework
+uvicorn                             # ASGI server
+sqlalchemy                  # For database
+alembic                   # For database migrations
+pydantic                    # For data validation
+psycopg2-binary                     # For PostgreSQL database
+python-dotenv               # For environment variables
+passlib[bcrypt]                     # For hashing passwords
+asyncpg                             # For async PostgreSQL
+pydantic-settings                   # For settings management       # For JWT tokens
+bcrypt                     # For hashing passwords
+passlib[bcrypt]                     # For hashing passwords
+python-multipart
+pyjwt
