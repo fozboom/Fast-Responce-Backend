@@ -2,9 +2,9 @@ from fastapi import FastAPI
 
 from app.users.router import router as router_users
 from app.roles.router import router as router_roles
-
+from app.logger import logger
 app = FastAPI()
-
+logger.info("App started")
 
 app.include_router(router_users)
 app.include_router(router_roles)

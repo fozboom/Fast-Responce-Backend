@@ -6,6 +6,7 @@ from fastapi.params import Depends, Security
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.config import settings
+from app.logger import logger
 from app.roles.service import RoleService
 from app.users.auth import create_access_token, get_password_hash, role_required, verify_password
 from app.users.schemas import SToken, SUserAuth, SUserCreate
@@ -33,10 +34,12 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 
 @router.post("/register", response_model=SUserAuth, description="Register new user")
 async def register_user(
-        security_scopes=Security(role_required, scopes=['admin']),
         user_data: SUserCreate = Depends(),
+        security_scopes=Security(role_required, scopes=['admin']),
 ) -> SUserAuth:
+    logger.info("Calling register_user")
     user = await UserService.find_one_or_none(username=user_data.username)
+    logger.debug(f"User: {user}")
     if user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -44,6 +47,7 @@ async def register_user(
         )
 
     role = await RoleService.find_one_or_none(name=user_data.role)
+    logger.debug(f"Role: {role}")
     if not role:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -58,7 +62,7 @@ async def register_user(
         "role_id": role.id,
         "is_active": True
     }
-
+    logger.debug(f"New user data: {new_user_data}")
     new_user = await UserService.add(**new_user_data)
 
     return SUserAuth(username=new_user.username, is_active=new_user.is_active, role=role.name)

@@ -13,3 +13,4 @@ passlib[bcrypt]                     # For hashing passwords
 python-multipart
 pyjwt
 colorlog
+loguru
