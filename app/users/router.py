@@ -1,8 +1,8 @@
 from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, status
-from fastapi.params import Depends, Security
+from fastapi import APIRouter, HTTPException, status, Depends, Security
+
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.config import settings
