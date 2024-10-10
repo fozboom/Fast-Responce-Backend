@@ -2,12 +2,15 @@ from fastapi import FastAPI
 
 from app.users.router import router as router_users
 from app.roles.router import router as router_roles
+from app.calls.router import router as router_calls
 from app.logger import logger
 app = FastAPI()
 logger.info("App started")
 
 app.include_router(router_users)
 app.include_router(router_roles)
+
+app.include_router(router_calls)
 
 # @app.exception_handler(TokenExpiredException)
 # async def token_expired_exception_handler(request: Request, exc: TokenExpiredException):
