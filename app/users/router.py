@@ -71,4 +71,5 @@ async def register_user(
 @router.get('/all', response_model=list[SUserAuth], description="Get all users")
 async def get_all_users(security_scopes=Security(role_required, scopes=['admin'])) -> list[SUserAuth]:
     users = await UserService.find_all()
+    return [SUserAuth.from_orm()]
     return [SUserAuth(username=user['username'], is_active=user['is_active'], role=user['role']) for user in users]

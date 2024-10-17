@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Security, Depends
 from app.roles.schemas import SRoleCreate
 from app.roles.service import RoleService
 from app.users.auth import role_required
-
+from app.roles.models import Role
 router = APIRouter(prefix='/roles', tags=['Work with roles'])
 
 
@@ -22,3 +22,11 @@ async def add_role(
     await RoleService.add(**new_role)
 
     return role_data
+
+
+@router.get("/get", description="Get all roles")
+async def get_roles(
+        security_scopes=Security(role_required, scopes=['admin'])
+) -> list[SRoleCreate]:
+    roles = await RoleService.find_all()
+    return roles

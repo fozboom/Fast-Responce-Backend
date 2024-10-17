@@ -6,9 +6,12 @@ from app.calls.router import router as router_calls
 from app.statuses.router import router as router_statuses
 from app.locations.router import router as router_locations
 from app.priority.router import router as router_priority
+from app.patients.router import router as router_patients
 from app.logger import logger
 app = FastAPI()
 logger.info("App started")
+
+app.include_router(router_patients)
 
 app.include_router(router_priority)
 app.include_router(router_users)
