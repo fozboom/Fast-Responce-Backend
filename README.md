@@ -30,4 +30,4 @@ If you have any questions or suggestions, you can reach out to me:
 
 ## License
 
-This project is licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License**. For more details, see the [LICENSE](./LICENSE) file.
+This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for more details.
