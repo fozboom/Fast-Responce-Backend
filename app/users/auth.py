@@ -8,8 +8,8 @@ from jwt import InvalidTokenError
 from passlib.context import CryptContext
 
 from app.config import settings
-from app.logger import logger
-from app.users.service import UserService
+from app.users.service import find_user_by_name
+
 
 class LoggingOAuth2PasswordBearer(OAuth2PasswordBearer):
     async def __call__(self, request: Request):
@@ -17,7 +17,6 @@ class LoggingOAuth2PasswordBearer(OAuth2PasswordBearer):
         logger.info(f"Token from Authorization header: {token}")
         return token
 
-# Используйте кастомный класс вместо стандартного OAuth2PasswordBearer
 oauth2_scheme = LoggingOAuth2PasswordBearer(tokenUrl="users/token/",
                                             scopes={"admin": "Admin access",
                                                     "doctor": "Doctor access",
@@ -34,7 +33,7 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict, user_role: str, expires_delta: timedelta | None = None):
+def create_access_token(data: dict, user_role: str = None, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     scopes = [user_role]
     to_encode.update({"scopes": scopes})
@@ -62,7 +61,7 @@ async def validate_token_and_return_scopes(token: str = Depends(oauth2_scheme)):
             raise credentials_exception
     except InvalidTokenError:
         raise credentials_exception
-    user = await UserService.find_one_or_none(username=username)
+    user = await find_user_by_name(username=username)
     if user is None:
         raise credentials_exception
     return scopes

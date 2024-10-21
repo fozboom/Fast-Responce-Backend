@@ -1,10 +1,9 @@
 from sqlalchemy.orm import Mapped, relationship
 
-from app.database import Base, int_pk, int_null_true
+from app.database import Base, int_null_true
 
 
 class Location(Base):
-    id: Mapped[int_pk]
     city: Mapped[str]
     street: Mapped[str]
     house_number: Mapped[int]
@@ -13,6 +12,8 @@ class Location(Base):
     longitude: Mapped[float]
     patients = relationship("Patient", back_populates="location")
     extend_existing = True
+
+    calls = relationship("Call", back_populates="location")
 
     def to_dict(self):
         return {

@@ -4,7 +4,7 @@ from app.locations.models import Location
 from app.locations.schema import SLocationCreate, SLocation
 from app.locations.service import LocationService
 from app.users.auth import role_required
-from app.calls.router import gmaps
+from app.utils.google_maps import  gmaps
 
 router = APIRouter(prefix="/locations", tags=["Work with locations"])
 
@@ -18,7 +18,7 @@ async def create_location(
     in_database = await LocationService.find_one_or_none(**location.model_dump())
     if in_database:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Location already exists.")
-    new_location = await LocationService.get_or_create_location_with_geocode(**location.model_dump())
+    new_location = await LocationRepository.get_or_create_location_with_geocode(**location.model_dump())
 
     if new_location.id:
         return SLocation.model_validate(new_location)
@@ -28,5 +28,5 @@ async def create_location(
 
 @router.get("/all", description="Get all locations")
 async def get_all_locations(security_scopes=Security(role_required, scopes=['admin'])) -> List[SLocation]:
-    result =  await LocationService.find_all()
+    result =  await LocationRepository.find_all()
     return [SLocation.model_validate(location) for location in result]

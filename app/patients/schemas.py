@@ -3,7 +3,7 @@ from pydantic import Field, field_validator, ConfigDict
 from pydantic.main import BaseModel
 
 from app.locations.schema import SLocationCreate, SLocation
-from app.patients.models import Gender
+from app.sql_enums import GenderEnum
 import re
 
 example = SLocationCreate(city="Minsk", street="Леонида Беды", house_number=4, apartment_number=4)
@@ -14,8 +14,8 @@ class SPatientCreate(BaseModel):
 
     name: str = Field("Ivanov Nikita", min_length=5, max_length=80, description="Patient's name")
     birth_date: date = Field("2004-11-07", description="Patient's birth date", examples=["YYYY-MM-DD"])
-    phone: str = Field("+375339955111", description="Phone number")
-    gender: Gender = Field("male", description="Patient's gender")
+    phone: str | None= Field("+375339955111", description="Phone number")
+    gender: GenderEnum = Field("мужчина", description="Patient's gender")
 
     @field_validator("birth_date", mode='before')
     def check_birth_date(cls, value: date):
@@ -32,7 +32,6 @@ class SPatientCreate(BaseModel):
 
 class SPatientResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    model_config['from_attributes'] = True
     id: int = Field(..., description="Patient's id")
     name: str = Field(..., description="Patient's name")
     birth_date: date = Field(..., description="Patient's birth date", examples=["YYYY-MM-DD"])

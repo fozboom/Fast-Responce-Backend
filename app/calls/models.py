@@ -1,28 +1,41 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.database import str_uniq, int_pk
+from app.database import str_uniq
 from sqlalchemy import String, Boolean, ForeignKey
 from app.database import Base
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import text
+from app.sql_enums import StatusEnum, PriorityEnum
 
 
-class User(Base):
-    id: Mapped[int_pk]
-    username: Mapped[str_uniq]
-    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
-    role = relationship("Role", back_populates="users")
+class Call(Base):
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"))
+
+    driver_name: Mapped[str | None]
+    operator_name: Mapped[str | None]
+    doctor_name: Mapped[str | None]
+
+    diagnosis: Mapped[str | None]
+    description: Mapped[str | None]
+
+    location_id: Mapped[int] = mapped_column(ForeignKey("locations.id"))
+
+    priority: Mapped[PriorityEnum] = mapped_column(default=PriorityEnum.HIGH, server_default=text("HIGH"))
+
+    status: Mapped[StatusEnum] = mapped_column(default=StatusEnum.REQUEST_CREATED,
+                                               server_default=text("'REQUEST_CREATED'"))
+
+    patient = relationship(
+        "Patient",
+        back_populates="calls",
+        lazy="joined"
+    )
+
+    location = relationship(
+        "Location",
+        back_populates="calls",
+        lazy="joined"
+    )
+
     extend_existing = True
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id})"
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "username": self.username,
-            "hashed_password": self.hashed_password,
-            "is_active": self.is_active,
-            "is_superuser": self.is_superuser,
-        }
-
-
