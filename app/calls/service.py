@@ -20,7 +20,7 @@ class CallService:
         location_data = {'street': patient_data.street, 'house_number': patient_data.house_number,
                          'city': patient_data.city}
         location = await LocationRepository.get_or_create_location_with_geocode(session=session,
-                                                                             location_data=location_data)
+                                                                                location_data=location_data)
         patient = await PatientRepository.find_one_or_none(session, name=patient_data.name)
         print(f'Patient: {patient}')
         if not patient:
@@ -30,8 +30,8 @@ class CallService:
                 gender=patient_data.gender,
                 phone=patient_data.phone
             )
-            await PatientService.add_patient(session, patient_data=patient_create_data.model_dump(),
-                                             location_data=location.to_dict())
+            patient = await PatientService.add_patient(session, patient_data=patient_create_data.model_dump(),
+                                                       location_data=location.to_dict())
 
         print(f'Patient: {patient}')
 
@@ -45,3 +45,8 @@ class CallService:
     @connection
     async def find_patient_by_name(session: AsyncSession, name: str):
         return await CallRepository.find_all(session, name=name)
+
+    @staticmethod
+    @connection
+    async def get_all_calls(session: AsyncSession):
+        return await CallRepository.find_all(session)

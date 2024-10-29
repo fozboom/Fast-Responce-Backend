@@ -1,5 +1,8 @@
 import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.dialects.postgresql.psycopg import logger
+
+from app.utils.logger_config import get_logger
 
 
 class Settings(BaseSettings):
@@ -21,13 +24,17 @@ settings = Settings()
 
 
 def get_db_url():
-    result =  (f"postgresql+asyncpg://{settings.FR_DB_USER}:{settings.DB_PASS}@"
-            f"{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}")
-    print(result)
+    result = (
+        f"postgresql+asyncpg://{settings.FR_DB_USER}:{settings.DB_PASS}@"
+        f"{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+    )
+    log = get_logger(__name__)
+    log.info(f"DB URL: {result}")
     return result
 
 
 def get_auth_data():
     return {"secret_key": settings.SECRET_KEY, "algorithm": settings.ALGORITHM}
 
-#print(get_db_url())
+
+# print(get_db_url())

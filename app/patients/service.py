@@ -17,6 +17,6 @@ class PatientService:
         new_patient_data = patient_data
         new_patient_data["location_id"] = location.id
 
-        new_patient = await PatientRepository.add_one(session, **new_patient_data)
+        new_patient = await PatientRepository.add_one(session, new_patient_data)
 
         return SPatientResponse.model_validate(new_patient)

@@ -8,7 +8,6 @@ from app.patients.service import PatientService
 from app.users.auth import role_required
 
 
-
 router = APIRouter(prefix="/calls", tags=["Operator actions"])
 
 
@@ -33,7 +32,12 @@ router = APIRouter(prefix="/calls", tags=["Operator actions"])
 
 @router.post("/add", description="Create new call")
 async def create_call(
-        information: SCallCreate = Depends(),
-        #security_scopes=Security(role_required, scopes=["operator", "admin"])
+    information: SCallCreate = Depends(),
+    # security_scopes=Security(role_required, scopes=["operator", "admin"])
 ):
     return await CallService.create_call(patient_data=information)
+
+
+@router.get("/get", description="Get all calls")
+async def get_all_calls():
+    return await CallService.get_all_calls()

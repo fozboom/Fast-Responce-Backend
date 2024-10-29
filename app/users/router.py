@@ -59,9 +59,7 @@ async def register_user(
         user_data: SUserCreate = Depends(),
         security_scopes=Security(role_required, scopes=['admin']),
 ) -> SUserAuth:
-    logger.info("Calling register_user")
     user = await find_user_by_name(username=user_data.username)
-    logger.debug(f"User: {user}")
     if user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -73,7 +71,6 @@ async def register_user(
     new_user_data = user_data.model_dump()
     new_user_data['hashed_password'] = hashed_password
     new_user_data.pop('password')
-    logger.debug(f"New user data: {new_user_data}")
     new_user = await add_user(**new_user_data)
 
     return SUserAuth.model_validate(new_user)

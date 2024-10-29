@@ -14,14 +14,18 @@ from app.users.service import find_user_by_name
 class LoggingOAuth2PasswordBearer(OAuth2PasswordBearer):
     async def __call__(self, request: Request):
         token = await super().__call__(request)
-        logger.info(f"Token from Authorization header: {token}")
         return token
 
-oauth2_scheme = LoggingOAuth2PasswordBearer(tokenUrl="users/token/",
-                                            scopes={"admin": "Admin access",
-                                                    "doctor": "Doctor access",
-                                                    "driver": "Driver access",
-                                                    "operator": "Operator access"})
+
+oauth2_scheme = LoggingOAuth2PasswordBearer(
+    tokenUrl="users/token/",
+    scopes={
+        "admin": "Admin access",
+        "doctor": "Doctor access",
+        "driver": "Driver access",
+        "operator": "Operator access",
+    },
+)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -33,18 +37,24 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict, user_role: str = None, expires_delta: timedelta | None = None):
+def create_access_token(
+    data: dict,
+    user_role: str = None,
+    expires_delta: timedelta | None = None,
+):
     to_encode = data.copy()
     scopes = [user_role]
     to_encode.update({"scopes": scopes})
-    logger.debug(f"Creating token with data: {to_encode}")
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
     return encoded_jwt
+
 
 async def validate_token_and_return_scopes(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
@@ -53,9 +63,10 @@ async def validate_token_and_return_scopes(token: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         username: str = payload.get("sub")
-        logger.debug(f"Token payload: {payload}")
         scopes = payload.get("scopes", [])
         if username is None:
             raise credentials_exception
@@ -68,19 +79,15 @@ async def validate_token_and_return_scopes(token: str = Depends(oauth2_scheme)):
 
 
 async def role_required(
-        security_scopes: SecurityScopes,
-        token_data: tuple = Depends(validate_token_and_return_scopes)
+    security_scopes: SecurityScopes,
+    token_data: tuple = Depends(validate_token_and_return_scopes),
 ):
     scopes = token_data
-    logger.debug(f"Required scopes: {security_scopes.scopes}")
 
     token_scopes = set(scopes)
-    logger.debug(f"Token scopes: {token_scopes}")
 
     if not token_scopes.intersection(security_scopes.scopes):
-        logger.warning("Not enough permissions")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions",
         )
-
