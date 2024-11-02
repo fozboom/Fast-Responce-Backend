@@ -20,6 +20,19 @@ async def find_user_by_name(username: str, session: AsyncSession):
 async def add_user(session: AsyncSession, **user_data):
     return await UserRepository.add_one(session, **user_data)
 
+
+class UserService:
+    @staticmethod
+    @connection
+    async def update_user_location_by_id(
+        session: AsyncSession,
+        user_id: int,
+        **data_to_update,
+    ):
+        filter_by = {"id": user_id}
+        return await LocationRepository.update(session, filter_by, **data_to_update)
+
+
 # @connection
 # async def save_refresh_token(session: AsyncSession, username: str, refresh_token: str):
 #     return await UserRepository.update_refresh_token(session, username=username, refresh_token=refresh_token)

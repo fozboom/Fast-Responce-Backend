@@ -41,3 +41,8 @@ async def create_call(
 @router.get("/get", description="Get all calls")
 async def get_all_calls():
     return await CallService.get_all_calls()
+
+
+@router.get("/get/{call_id}", description="Get detailed information about call")
+async def get_call_details(call_id: int):
+    return await CallService.get_call_details(call_id=call_id)
