@@ -55,6 +55,6 @@ async def update_location(
 
 
 @router.get("/current_coordinates", description="Get current coordinates")
-async def get_static_coordinates() -> CoordinatesResponse:
+async def get_static_coordinates():
     # Возвращаем захардкоженные координаты центра Минска
     return SCoordinates(latitude=53.9, longitude=27.5667)
