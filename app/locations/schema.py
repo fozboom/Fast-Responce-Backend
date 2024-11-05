@@ -27,3 +27,8 @@ class SLocation(BaseModel):
 class SLocationUpdate(BaseModel):
     latitude: float = Field(..., description="Latitude")
     longitude: float = Field(..., description="Longitude")
+
+
+class SCoordinates(BaseModel):
+    latitude: float = Field(..., description="Latitude")
+    longitude: float = Field(..., description="Longitude")

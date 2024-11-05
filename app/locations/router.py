@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Security, status, HTTPException, Depends
 from typing import List
 from app.locations.models import Location
-from app.locations.schema import SLocationCreate, SLocation
+from app.locations.schema import SLocationCreate, SLocation, SCoordinates
 from app.locations.service import LocationService
 from app.users.auth import role_required
 from app.utils.google_maps import gmaps
@@ -52,3 +52,9 @@ async def update_location(
         location_id=location_id, **location.model_dump()
     )
     return SLocation.model_validate(location)
+
+
+@router.get("/current_coordinates", description="Get current coordinates")
+async def get_static_coordinates() -> CoordinatesResponse:
+    # Возвращаем захардкоженные координаты центра Минска
+    return SCoordinates(latitude=53.9, longitude=27.5667)
